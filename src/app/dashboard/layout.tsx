@@ -1,12 +1,10 @@
-import Sidebar from '@/components/layout/Sidebar'
-import { createClient } from '@/lib/supabase/server'
-import { redirect } from 'next/navigation'
+import Sidebar from '@/components/layout/Sidebar';
 
-export default async function AppLayout({ children }: { children: React.ReactNode }) {
-  const supabase = createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/auth/login')
-
+export default async function AppLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <div className="flex h-screen overflow-hidden">
       <Sidebar />
@@ -14,5 +12,5 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         <div className="flex-1 overflow-y-auto p-6">{children}</div>
       </main>
     </div>
-  )
+  );
 }
