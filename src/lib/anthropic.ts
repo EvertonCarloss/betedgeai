@@ -1,33 +1,43 @@
-import Anthropic from 'anthropic'
-
-const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+import Anthropic from '@anthropic-ai/sdk';
+const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
 export type GameOdds = {
-  home_team: string
-  away_team: string
-  outcomes: Array<{ name: string; price: number }>
-}
+  home_team: string;
+  away_team: string;
+  outcomes: Array<{ name: string; price: number }>;
+};
 
 export async function analyzeOdds(
   games: GameOdds[],
   market: string,
-  options: { valueBet?: boolean; highConfOnly?: boolean } = {}
+  options: { valueBet?: boolean; highConfOnly?: boolean } = {},
 ) {
   const marketLabel: Record<string, string> = {
     h2h: 'resultado (1X2)',
     totals: 'total de gols/pontos',
     spreads: 'handicap',
-  }
+  };
 
-  const sample = games.slice(0, 14).map(g => {
-    const odds = g.outcomes.map(o => `${o.name}: ${o.price.toFixed(2)}`).join(' | ')
-    return `${g.home_team} vs ${g.away_team} → ${odds}`
-  }).join('\n')
+  const sample = games
+    .slice(0, 14)
+    .map((g) => {
+      const odds = g.outcomes
+        .map((o) => `${o.name}: ${o.price.toFixed(2)}`)
+        .join(' | ');
+      return `${g.home_team} vs ${g.away_team} → ${odds}`;
+    })
+    .join('\n');
 
   const extraInstructions = [
-    options.valueBet ? 'Identifique value bets onde a odd parece subestimada pelo mercado.' : '',
-    options.highConfOnly ? 'Gere apenas sugestões com confiança acima de 65%.' : '',
-  ].filter(Boolean).join(' ')
+    options.valueBet
+      ? 'Identifique value bets onde a odd parece subestimada pelo mercado.'
+      : '',
+    options.highConfOnly
+      ? 'Gere apenas sugestões com confiança acima de 65%.'
+      : '',
+  ]
+    .filter(Boolean)
+    .join(' ');
 
   const prompt = `Você é um analista sênior de apostas esportivas. Analise estas partidas com odds reais.
 
@@ -58,31 +68,31 @@ Responda SOMENTE com JSON válido, sem markdown:
     }
   ],
   "insight": "insight geral sobre o conjunto de jogos, 1 frase"
-}`
+}`;
 
   const response = await client.messages.create({
     model: 'claude-sonnet-4-20250514',
     max_tokens: 1500,
     messages: [{ role: 'user', content: prompt }],
-  })
+  });
 
   const text = response.content
-    .map(c => (c.type === 'text' ? c.text : ''))
+    .map((c) => (c.type === 'text' ? c.text : ''))
     .join('')
     .replace(/```json|```/g, '')
-    .trim()
+    .trim();
 
   return JSON.parse(text) as {
     suggestions: Array<{
-      match: string
-      home_team: string
-      away_team: string
-      type: string
-      odd: number
-      confidence: number
-      reasoning: string
-      is_value_bet: boolean
-    }>
-    insight: string
-  }
+      match: string;
+      home_team: string;
+      away_team: string;
+      type: string;
+      odd: number;
+      confidence: number;
+      reasoning: string;
+      is_value_bet: boolean;
+    }>;
+    insight: string;
+  };
 }
