@@ -1,7 +1,9 @@
-export default function Home() {
-  return (
-    <main>
-      <h1>Betedge AI</h1>
-    </main>
-  );
+import { redirect } from 'next/navigation'
+import { createClient } from '@/lib/supabase/server'
+
+export default async function Home() {
+  const supabase = createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (user) redirect('/dashboard')
+  else redirect('/auth/login')
 }
